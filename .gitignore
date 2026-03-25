@@ -1,0 +1,10 @@
+.env
+state.json
+node_modules
+dashboard/index.html
+*.log
+GOALS.md
+AGENTS.md
+Knowledge/
+Tasks/
+lyrics.txt
