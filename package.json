@@ -1,0 +1,20 @@
+{
+  "name": "product-sense-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "morning": "node agent.mjs morning",
+    "eod": "node agent.mjs eod",
+    "task": "node agent.mjs task",
+    "orchestrate:morning": "node orchestrator.mjs morning",
+    "orchestrate:eod": "node orchestrator.mjs eod",
+    "orchestrate:task": "node orchestrator.mjs task",
+    "dashboard": "node dashboard/generate.mjs && open dashboard/index.html",
+    "weekly": "node weekly-team-messages.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "better-sqlite3": "^11.0.0"
+  }
+}
