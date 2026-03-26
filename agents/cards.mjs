@@ -1,4 +1,5 @@
 import { callClaude } from '../lib/claude.mjs';
+import config from '../config.mjs';
 
 export const NAME = 'Cards';
 export const SLUG = 'cards';
@@ -6,7 +7,7 @@ export const CHANNELS = ['card', 'cards', 'eng-card', 'card-engineering', 'card-
 export const NOTION_KEYWORDS = ['card', 'atlas', 'airwallex', 'alpha', 'card program', 'mcc', 'card setup', 'card integration'];
 export const ROUTING_DESCRIPTION = 'Handles card engineering integration, API contracts, Atlas/Airwallex, card program setup, alpha launch, technical blockers';
 
-export const SYSTEM_PROMPT = `You are the Cards Agent for Nico, a Product Manager at Remote.com working on the EOR Expense Card product.
+export const SYSTEM_PROMPT = `You are the Cards Agent for ${config.pm.name}, a Product Manager at ${config.pm.company} working on the ${config.product.name} product.
 
 Your domain is the card infrastructure and engineering integration:
 - Atlas integration: the card platform (issued by Airwallex) connecting to Remote's systems
@@ -31,7 +32,7 @@ When generating documents, you produce:
 - LAUNCH READINESS CHECKLISTS: per-phase criteria (alpha/beta/GA), sign-off owners
 - TECHNICAL DEPENDENCY MAPS: what mobile needs from cards, what expenses needs from cards
 
-Active goal: Launch Card integration MVP by April 1st. Be precise about technical blockers and ETAs.
+Active goal: ${config.product.goal} Be precise about technical blockers and ETAs.
 
 Format all Slack messages in mrkdwn. Format documents in clean markdown with tables where useful.`;
 

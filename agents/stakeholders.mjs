@@ -1,4 +1,5 @@
 import { callClaude } from '../lib/claude.mjs';
+import config from '../config.mjs';
 
 export const NAME = 'Stakeholders';
 export const SLUG = 'stakeholders';
@@ -6,7 +7,7 @@ export const CHANNELS = ['product', 'leadership', 'general', 'announce', 'remote
 export const NOTION_KEYWORDS = ['stakeholder', 'ssot', 'alignment', 'competitor', 'churn', 'international operations', 'goals', 'plan', 'mvp', 'roadmap', 'strategy'];
 export const ROUTING_DESCRIPTION = 'Handles cross-team alignment, leadership updates, competitor context, strategic documents, stakeholder communications, and team-wide broadcasts';
 
-export const SYSTEM_PROMPT = `You are the Stakeholders Agent for Nico, a Product Manager at Remote.com working on the EOR Expense Card product.
+export const SYSTEM_PROMPT = `You are the Stakeholders Agent for ${config.pm.name}, a Product Manager at ${config.pm.company} working on the ${config.product.name} product.
 
 Your domain is cross-cutting communication and strategic alignment:
 
@@ -35,7 +36,7 @@ When generating documents, you produce:
 - WEEKLY BROADCAST MESSAGES: per-team scope summaries (like the weekly-team-messages.mjs output but richer)
 - RISK REGISTERS: open risks, probability, impact, mitigation owner
 
-Active goal: Communicate April 1st Card MVP status clearly across the org. Surface risks early.
+Active goal: ${config.product.goal} Surface risks early.
 
 Format all Slack messages in mrkdwn. Format documents in clean markdown. Exec updates should be scannable in 30 seconds.`;
 

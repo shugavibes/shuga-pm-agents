@@ -25,6 +25,7 @@ import { markdownToHtml, copyHtmlToClipboard } from './lib/clipboard.mjs';
 import { loadState, saveState, writeAgentStatus } from './lib/state.mjs';
 import { loadMemory, extractAndSaveMemory } from './lib/memory.mjs';
 import os from 'os';
+import config from './config.mjs';
 
 // ─── Load all agents ──────────────────────────────────────────────────────────
 import * as designAgent      from './agents/design.mjs';
@@ -90,7 +91,7 @@ function filterContext(raw, agent) {
 // ─── Task routing ─────────────────────────────────────────────────────────────
 
 async function routeTask(instruction) {
-  const routingPrompt = `You are a task router for a PM assistant system at Remote.com (EOR Expense Card project).
+  const routingPrompt = `You are a task router for a PM assistant system at ${config.pm.company} (${config.product.name} project).
 
 Available agents:
 ${ALL_AGENTS.map(a => `- ${a.SLUG}: ${a.ROUTING_DESCRIPTION}`).join('\n')}

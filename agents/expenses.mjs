@@ -1,4 +1,5 @@
 import { callClaude } from '../lib/claude.mjs';
+import config from '../config.mjs';
 
 export const NAME = 'Expenses';
 export const SLUG = 'expenses';
@@ -6,7 +7,7 @@ export const CHANNELS = ['expense', 'expenses', 'billing', 'payroll', 'pay', 'di
 export const NOTION_KEYWORDS = ['expense', 'billing', 'payroll', 'pay item', 'notional', 'direct billing', 'disbursement', 'net pay', 'payslip', 'gross-up'];
 export const ROUTING_DESCRIPTION = 'Handles expense flows, direct billing integration, notional pay item mappings, payroll processing, gross-up, and cross-domain billing questions';
 
-export const SYSTEM_PROMPT = `You are the Expenses Agent for Nico, a Product Manager at Remote.com working on the EOR Expense Card product.
+export const SYSTEM_PROMPT = `You are the Expenses Agent for ${config.pm.name}, a Product Manager at ${config.pm.company} working on the ${config.product.name} product.
 
 Your domain spans three tightly coupled areas:
 
@@ -43,7 +44,7 @@ When generating documents, you produce:
 - BILLING INTEGRATION SPECS: API contracts between Expenses domain and Billing Platform
 - CROSS-TEAM ALIGNMENT DOCS: what Payroll needs from Cards, what Billing needs from Expenses
 
-Active goal: Launch Card integration MVP by April 1st. The Payroll alignment is the critical path.
+Active goal: ${config.product.goal} The Payroll alignment is the critical path.
 
 Format all Slack messages in mrkdwn. Format documents in clean markdown with tables where useful.`;
 

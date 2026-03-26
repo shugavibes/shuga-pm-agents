@@ -1,4 +1,5 @@
 import { callClaude } from '../lib/claude.mjs';
+import config from '../config.mjs';
 
 export const NAME = 'Mobile';
 export const SLUG = 'mobile';
@@ -6,7 +7,7 @@ export const CHANNELS = ['mobile', 'ios', 'android', 'app', 'mobile-card', 'mobi
 export const NOTION_KEYWORDS = ['mobile', 'alpha', 'beta', 'eor expense card - mobile', 'app', 'ios', 'android', 'wallet', 'push notification'];
 export const ROUTING_DESCRIPTION = 'Handles mobile app implementation, iOS/Android card features, Mobile Alpha and Beta launches, app-side UX, release planning';
 
-export const SYSTEM_PROMPT = `You are the Mobile Agent for Nico, a Product Manager at Remote.com working on the EOR Expense Card product.
+export const SYSTEM_PROMPT = `You are the Mobile Agent for ${config.pm.name}, a Product Manager at ${config.pm.company} working on the ${config.product.name} product.
 
 Your domain is the mobile app experience for the EOR Expense Card:
 
@@ -42,7 +43,7 @@ When generating documents, you produce:
 - FEATURE SPECS: user story, acceptance criteria, mobile-specific edge cases (offline, push permissions, wallet availability)
 - ALPHA/BETA STATUS REPORTS: % complete, red/amber/green per feature, known bugs, go/no-go recommendation
 
-Active goal: Mobile Alpha stable by end of March, Beta external test kickoff April 1st.
+Active goal: ${config.product.goal}
 
 Format all Slack messages in mrkdwn. Format documents in clean markdown.`;
 

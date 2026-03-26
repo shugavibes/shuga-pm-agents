@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
 import { getMyUserId, getSlackMentions, getSlackActiveThreads, getMorningThreadReplies, getSelfDMChannel, postSlackMessage, notifyTokenExpired } from './lib/slack-mcp.mjs';
+import config from './config.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATE_FILE = path.join(__dirname, 'state.json');
@@ -369,11 +370,11 @@ ${notionPages.length > 0
   : '(no recent pages)'}
 
 ## Active goal
-Launch Card integration MVP by April 1st — all teams aligned and unblocked.
+${config.product.goal}
 
 Based on all this context, produce a morning briefing in Slack mrkdwn format with these sections:
 
-*Good morning Nico!* 👋
+*Good morning ${config.pm.name}!* 👋
 
 *Top 3 priorities for today:*
 1. ...
@@ -389,7 +390,7 @@ Based on all this context, produce a morning briefing in Slack mrkdwn format wit
 
 _Reply *yes* to this message to confirm the Notion updates — I'll remind you at EOD._
 
-Keep it concise, actionable, and focused on unblocking the Card integration MVP.`;
+Keep it concise, actionable, and focused on ${config.product.name}.`;
 
   log.step('Asking Claude for morning briefing...');
   const briefing = await analyzeWithClaude(prompt);
@@ -459,7 +460,7 @@ ${state.notionProposals?.join(', ') || '(none)'}
 ## User confirmed Notion updates: ${userConfirmed ? 'YES' : 'NO'}
 
 ## Active goal
-Launch Card integration MVP by April 1st.`;
+${config.product.goal}`;
 
   // ── Personal EOD summary ──
   const summaryPrompt = `You are a product manager's assistant. Today is ${date} and it's end of day.
@@ -480,7 +481,7 @@ ${userConfirmed
   ? `*Notion updates to apply now:*\n${state.notionProposals?.map((p) => `• "${p}" — review and update based on today's Slack context`).join('\n') || ''}`
   : '*Notion updates:* No confirmation received — proposals are saved for tomorrow.'}
 
-Keep it short. Focus on the Card integration MVP progress.`;
+Keep it short. Focus on ${config.product.name} progress.`;
 
   // ── Team update draft ──
   const teamUpdatePrompt = `You are a product manager's assistant. Today is ${date} and it's end of day.
