@@ -125,69 +125,115 @@ export async function callClaude(userPrompt, { systemPrompt = null, maxTokens = 
 }
 ```
 
-### `lib/slack.mjs`
-Write this exactly as-is (uses env vars at runtime, no hardcoded values):
+### `lib/slack-mcp.mjs`
+Write this exactly as-is (calls the Slack MCP server directly via JSON-RPC — proper OAuth, no browser cookies):
 ```js
-import https from 'https';
-import { execSync } from 'child_process';
 import { log } from './logger.mjs';
 
-export async function slackApi(method, params = {}) {
-  const xoxc = process.env.SLACK_XOXC_TOKEN;
-  const xoxd = process.env.SLACK_XOXD_TOKEN;
-  const body = new URLSearchParams({ token: xoxc, ...params }).toString();
-  const resp = await fetch(`https://slack.com/api/${method}`, {
+async function mcpTool(name, args = {}) {
+  const token = process.env.SLACK_MCP_TOKEN;
+  if (!token) throw new Error('SLACK_MCP_TOKEN not set in .env');
+  const resp = await fetch('https://mcp.slack.com/mcp', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Cookie': `d=${xoxd}` },
-    body,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name, arguments: args },
+    }),
   });
   const data = await resp.json();
-  if (!data.ok) throw new Error(`Slack ${method} failed: ${data.error}`);
-  return data;
+  if (data.error) throw new Error(`MCP ${name} error: ${data.error.message}`);
+  const text = data.result?.content?.[0]?.text;
+  if (!text) throw new Error(`MCP ${name}: empty response`);
+  try { return JSON.parse(text); } catch { return { raw: text }; }
+}
+
+function parseSearchResults(raw) {
+  const text = typeof raw === 'string' ? raw : raw.results || '';
+  const blocks = text.split(/\n---\n/);
+  const results = [];
+  for (const block of blocks) {
+    const channelMatch = block.match(/Channel: #?(.*?)\s*\(ID:\s*(C\w+)\)/);
+    const fromMatch = block.match(/From: .+?\(ID:\s*(U\w+)\)/);
+    const usernameMatch = block.match(/From: ([^(]+)\s*\(ID:/);
+    const tsMatch = block.match(/Message_ts:\s*([\d.]+)/);
+    const permalinkMatch = block.match(/Permalink:\s*\[link\]\((https?:\/\/[^)]+)\)/);
+    const textMatch = block.match(/Text:\s*\n([\s\S]*?)(?:\n\n|$)/);
+    if (!tsMatch) continue;
+    results.push({
+      channel: channelMatch ? channelMatch[1].trim() : '',
+      channelId: channelMatch ? channelMatch[2] : '',
+      user: usernameMatch ? usernameMatch[1].trim() : '',
+      userId: fromMatch ? fromMatch[1] : '',
+      text: textMatch ? textMatch[1].trim() : '',
+      ts: tsMatch[1],
+      permalink: permalinkMatch ? permalinkMatch[1] : '',
+    });
+  }
+  return results;
+}
+
+function parseThreadMessages(raw) {
+  const text = typeof raw === 'string' ? raw : raw.messages || '';
+  const blocks = text.split(/\n(?===)/);
+  const messages = [];
+  for (const block of blocks) {
+    const fromMatch = block.match(/From:\s*.+?\((U\w+)\)/);
+    const tsMatch = block.match(/Message TS:\s*([\d.]+)/);
+    const afterMeta = block.replace(/^=+[^=]+=+\n/, '').replace(/^From:.*\n/m, '').replace(/^Time:.*\n/m, '').replace(/^Message TS:.*\n/m, '');
+    if (!fromMatch) continue;
+    messages.push({ user: fromMatch[1], text: afterMeta.trim(), ts: tsMatch ? tsMatch[1] : '' });
+  }
+  return messages;
+}
+
+export async function getMyUserId() {
+  const data = await mcpTool('slack_read_user_profile');
+  const match = (data.result || '').match(/User ID:\s*(\S+)/);
+  if (!match) throw new Error('Could not parse user ID from profile');
+  return match[1];
 }
 
 export async function getSlackMentions(userId, hoursBack = 24) {
-  const oldest = Math.floor((Date.now() / 1000) - hoursBack * 3600);
-  const result = await slackApi('search.messages', {
-    query: `<@${userId}>`, sort: 'timestamp', sort_dir: 'desc', count: 30,
-  });
-  return (result.messages?.matches || [])
-    .filter(m => parseFloat(m.ts) > oldest)
-    .map(m => ({ channel: m.channel?.name || m.channel?.id, text: m.text, user: m.username || m.user, ts: m.ts, permalink: m.permalink }));
+  const oldest = Date.now() / 1000 - hoursBack * 3600;
+  const data = await mcpTool('slack_search_public_and_private', { query: `<@${userId}>`, count: 30 });
+  return parseSearchResults(data).filter(m => parseFloat(m.ts) > oldest);
 }
 
 export async function getSlackActiveThreads(userId, hoursBack = 24) {
-  const oldest = Math.floor((Date.now() / 1000) - hoursBack * 3600);
-  const result = await slackApi('search.messages', {
-    query: `from:<@${userId}>`, sort: 'timestamp', sort_dir: 'desc', count: 20,
-  });
-  return (result.messages?.matches || [])
-    .filter(m => parseFloat(m.ts) > oldest)
-    .map(m => ({ channel: m.channel?.name || m.channel?.id, text: m.text, ts: m.ts, permalink: m.permalink }));
+  const oldest = Date.now() / 1000 - hoursBack * 3600;
+  const data = await mcpTool('slack_search_public_and_private', { query: `from:<@${userId}>`, count: 20 });
+  return parseSearchResults(data).filter(m => parseFloat(m.ts) > oldest && m.userId === userId);
+}
+
+export async function getMorningThreadReplies(channelId, threadTs) {
+  try {
+    const data = await mcpTool('slack_read_thread', { channel_id: channelId, message_ts: threadTs, limit: 50 });
+    return parseThreadMessages(data);
+  } catch { return []; }
 }
 
 export async function getSelfDMChannel(userId) {
-  const result = await slackApi('conversations.open', { users: userId });
-  return result.channel.id;
+  return userId; // slack_send_message accepts user IDs directly as DM targets
 }
 
 export async function postSlackMessage(channelId, text) {
-  const result = await slackApi('chat.postMessage', { channel: channelId, text, mrkdwn: 'true' });
-  return result.ts;
+  const data = await mcpTool('slack_send_message', { channel_id: channelId, message: text });
+  return data.message_context?.message_ts || '';
 }
 
 export async function postSlackReply(channelId, threadTs, text) {
-  const result = await slackApi('chat.postMessage', {
-    channel: channelId, text, mrkdwn: 'true', thread_ts: threadTs,
-  });
-  return result.ts;
+  const data = await mcpTool('slack_send_message', { channel_id: channelId, message: text, thread_ts: threadTs });
+  return data.message_context?.message_ts || '';
 }
 
 export async function notifyTokenExpired() {
-  const msg = 'PM Agent: Slack tokens expired. Open Slack in browser → DevTools → Network → any slack.com/api request → copy xoxc token and d cookie → update .env.';
-  try {
-    execSync(`osascript -e 'display notification "${msg}" with title "PM Agent" sound name "Basso"'`);
-  } catch {}
+  log.warning('Slack MCP token expired. Re-authorize in Cursor: open Cursor → MCP settings → reconnect Slack → copy new token to .env as SLACK_MCP_TOKEN.');
 }
 ```
 
@@ -503,7 +549,7 @@ import { fileURLToPath } from 'url';
 import { loadEnv } from './lib/env.mjs';
 import { log } from './lib/logger.mjs';
 import { callClaude } from './lib/claude.mjs';
-import { slackApi, getSlackMentions, getSlackActiveThreads, getSelfDMChannel, postSlackMessage, postSlackReply, notifyTokenExpired } from './lib/slack.mjs';
+import { getMyUserId, getSlackMentions, getSlackActiveThreads, getSelfDMChannel, postSlackMessage, postSlackReply, notifyTokenExpired } from './lib/slack-mcp.mjs';
 import { getNotionContext, filterNotionPages } from './lib/notion.mjs';
 import { markdownToHtml, copyHtmlToClipboard } from './lib/clipboard.mjs';
 import { loadState, saveState, writeAgentStatus } from './lib/state.mjs';
@@ -769,23 +815,18 @@ async function main() {
   log.info(`PM Agent Orchestrator — ${mode} — ${new Date().toISOString()}`);
   log.info(`Agents: ${ALL_AGENTS.map(a => a.NAME).join(', ')}`);
 
-  log.step('Authenticating with Slack...');
-  let auth;
+  log.step('Connecting to Slack via MCP...');
+  let userId;
   try {
-    auth = await slackApi('auth.test', {});
+    userId = await getMyUserId();
+    if (!userId) throw new Error('Could not resolve Slack user ID');
+    log.success(`Slack user: ${userId}`);
   } catch (err) {
-    const isExpired = /token_revoked|invalid_auth|not_authed/.test(err.message);
-    if (isExpired) {
-      log.error('Slack tokens are expired. See .env.example for how to refresh them.');
-      await notifyTokenExpired();
-      writeAgentStatus({ tokenExpired: true, errors: [err.message], [mode + 'Status']: 'error' });
-      process.exit(1);
-    }
-    throw err;
+    log.error(`Slack MCP connection failed: ${err.message}`);
+    await notifyTokenExpired();
+    writeAgentStatus({ tokenExpired: true, errors: [err.message], [mode + 'Status']: 'error' });
+    process.exit(1);
   }
-
-  log.success(`Logged in as ${auth.user} (${auth.team})`);
-  const userId = auth.user_id;
   const selfChannel = await getSelfDMChannel(userId);
 
   if (mode === 'morning') await runMorning(userId, selfChannel);
@@ -819,19 +860,22 @@ Write this with placeholder values only. Explain where to get each one in commen
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 
 # ─── Slack ────────────────────────────────────────────────────────────────────
-# These are your personal browser session tokens (NOT a bot token).
-# How to get them:
-#   1. Open Slack in your browser (app.slack.com)
-#   2. Open DevTools → Network tab
-#   3. Perform any action (send a message, switch channels)
-#   4. Click any request to slack.com/api/...
-#   5. In the Request Headers, find the "Cookie" header
-#      - Copy the value of the "d" cookie → this is SLACK_XOXD_TOKEN
-#   6. In the Request Payload (or Form Data), find "token"
-#      - This is your SLACK_XOXC_TOKEN (starts with xoxc-)
-# Note: these expire every few weeks. Re-run these steps to refresh them.
-SLACK_XOXC_TOKEN=xoxc-your-token-here
-SLACK_XOXD_TOKEN=your-d-cookie-value-here
+# This is your personal OAuth token from the Slack MCP server.
+# How to get it (requires Cursor IDE):
+#   1. Open Cursor → Settings → MCP
+#   2. Add the Slack MCP server:
+#      URL: https://mcp.slack.com/mcp
+#   3. Click "Connect" — it will open a Slack OAuth flow in your browser
+#   4. Authorize it with your Slack account
+#   5. Cursor stores the token. To extract it, run:
+#      node -e "
+#        const sqlite3 = require('better-sqlite3');
+#        // path: ~/Library/Application Support/Cursor/User/globalStorage/state.vscdb
+#        // decrypt the mcp.oauth.tokens entry using your Cursor Safe Storage keychain key
+#      "
+#      (The setup command will extract this for you automatically if Cursor is installed)
+# Note: tokens last ~12 hours and refresh automatically through Cursor.
+SLACK_MCP_TOKEN=xoxe.xoxp-1-your-token-here
 
 # ─── Notion ───────────────────────────────────────────────────────────────────
 # Path to Notion's local SQLite database (reads without internet, no API key needed).
@@ -1028,8 +1072,7 @@ After creating all files, print this summary to the user (fill in the actual pat
    cp .env.example .env
    # Edit .env and fill in:
    #   ANTHROPIC_API_KEY  → get at console.anthropic.com
-   #   SLACK_XOXC_TOKEN   → see instructions in .env.example
-   #   SLACK_XOXD_TOKEN   → see instructions in .env.example
+   #   SLACK_MCP_TOKEN    → connect Slack MCP in Cursor (see .env.example)
    #   NOTION_DB_PATH     → run: find ~/Library -name "notion.db" 2>/dev/null
 
 3. TEST IT MANUALLY
@@ -1045,7 +1088,7 @@ After creating all files, print this summary to the user (fill in the actual pat
 
 📝 NOTES:
 - Agents run in parallel and post to your Slack DM
-- Slack tokens expire every few weeks — see .env.example to refresh them
+- Slack token: if it expires, reconnect Slack MCP in Cursor and update SLACK_MCP_TOKEN in .env
 - Memory files grow in ~/.agents/memory-{slug}.md after each run
 - Run a single agent: node orchestrator.mjs morning --only {slug}
 - Send a task: node orchestrator.mjs task "write a design brief for the onboarding flow"
