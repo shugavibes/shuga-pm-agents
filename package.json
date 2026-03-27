@@ -10,8 +10,7 @@
     "orchestrate:morning": "node orchestrator.mjs morning",
     "orchestrate:eod": "node orchestrator.mjs eod",
     "orchestrate:task": "node orchestrator.mjs task",
-    "dashboard": "node dashboard/generate.mjs && open dashboard/index.html",
-    "weekly": "node weekly-team-messages.mjs"
+    "dashboard": "node dashboard/generate.mjs && open dashboard/index.html"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

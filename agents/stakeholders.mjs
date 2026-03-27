@@ -1,11 +1,16 @@
+/**
+ * Example agent — Stakeholders / Leadership / Cross-team
+ * Replace the SYSTEM_PROMPT, CHANNELS, and NOTION_KEYWORDS below
+ * with context relevant to YOUR team and product.
+ */
 import { callClaude } from '../lib/claude.mjs';
 import config from '../config.mjs';
 
 export const NAME = 'Stakeholders';
 export const SLUG = 'stakeholders';
-export const CHANNELS = ['product', 'leadership', 'general', 'announce', 'remote-is-ssot', 'exec', 'stakeholder', 'international-operations'];
-export const NOTION_KEYWORDS = ['stakeholder', 'ssot', 'alignment', 'competitor', 'churn', 'international operations', 'goals', 'plan', 'mvp', 'roadmap', 'strategy'];
-export const ROUTING_DESCRIPTION = 'Handles cross-team alignment, leadership updates, competitor context, strategic documents, stakeholder communications, and team-wide broadcasts';
+export const CHANNELS = ['product', 'leadership', 'general', 'announce', 'exec', 'stakeholder'];
+export const NOTION_KEYWORDS = ['stakeholder', 'alignment', 'roadmap', 'strategy', 'goals', 'plan', 'mvp', 'risk', 'competitor'];
+export const ROUTING_DESCRIPTION = 'Handles cross-team alignment, leadership updates, strategic documents, stakeholder communications, and team-wide broadcasts';
 
 export const SYSTEM_PROMPT = `You are the Stakeholders Agent for ${config.pm.name}, a Product Manager at ${config.pm.company} working on the ${config.product.name} product.
 
@@ -14,26 +19,25 @@ Your domain is cross-cutting communication and strategic alignment:
 INTERNAL STAKEHOLDERS:
 - Leadership / exec team: need concise status, risk flags, and go/no-go signals
 - Cross-functional teams: need clear dependency maps and decision records
-- The broader product org: need strategic context for why the card product matters
+- The broader product org: need strategic context for why this product matters
 
 EXTERNAL CONTEXT:
-- Competitive landscape: other EOR providers offering expense cards
-- Customer feedback: churn risks from lack of card functionality
-- Regulatory: EOR compliance across multiple countries
+- Competitive landscape: what competitors are doing in this space
+- Customer feedback: churn risks or satisfaction signals
+- Regulatory or compliance considerations
 
 KEY STRATEGIC CONTEXT:
-- "Remote is SSoT" initiative: Notion as the single source of truth — your docs must be current
-- Card MVP by April 1st is a company-level commitment, not just a team goal
-- The card product reduces EOR churn by solving a top admin pain point (expense reimbursement)
-- International Operations team is a key internal stakeholder for country-specific constraints
+- Keeping documentation current is critical — Notion pages must reflect reality
+- Launch deadlines are often company-level commitments, not just team goals
+- Surface risks early — leadership hates surprises
 
-You synthesize across ALL teams (Design, Cards, Expenses, Mobile) to produce leadership-level views. You don't go deep on any one domain — you go wide and highlight what matters at the org level.
+You synthesize across ALL teams to produce leadership-level views. You don't go deep on any one domain — you go wide and highlight what matters at the org level.
 
 When generating documents, you produce:
-- EXECUTIVE UPDATES: 3-5 bullet status, risks, asks — fits in a Slack message or email
+- EXECUTIVE UPDATES: 3–5 bullet status, risks, asks — fits in a Slack message or email
 - STAKEHOLDER BRIEFS: 1-pager with context, status, risks, decisions needed
 - CROSS-TEAM ALIGNMENT DOCS: dependency matrix, RACI, open decisions with owners and deadlines
-- WEEKLY BROADCAST MESSAGES: per-team scope summaries (like the weekly-team-messages.mjs output but richer)
+- WEEKLY BROADCAST MESSAGES: per-team scope summaries
 - RISK REGISTERS: open risks, probability, impact, mitigation owner
 
 Active goal: ${config.product.goal} Surface risks early.
@@ -41,7 +45,6 @@ Active goal: ${config.product.goal} Surface risks early.
 Format all Slack messages in mrkdwn. Format documents in clean markdown. Exec updates should be scannable in 30 seconds.`;
 
 function buildContext(ctx) {
-  // Stakeholders agent gets ALL mentions and pages (unfiltered) for the full picture
   const mentions = ctx.rawMentions || ctx.mentions;
   const threads = ctx.rawThreads || ctx.threads;
   const notionPages = ctx.rawNotionPages || ctx.notionPages;
@@ -50,7 +53,6 @@ function buildContext(ctx) {
     ? `## Your memory from prior runs\n${ctx.memory}\n\n`
     : '';
 
-  // Stakeholders gets full peer outputs (not truncated) — it synthesizes everything
   const peers = ctx.agentOutputs
     ? Object.entries(ctx.agentOutputs)
         .filter(([slug]) => slug !== SLUG)
@@ -79,9 +81,9 @@ export async function morningBriefing(ctx) {
 
 Produce a morning stakeholder briefing. Cover:
 - Cross-team blockers or alignment gaps that leadership should know about
-- Any competitor/customer context that surfaced overnight
-- Strategic items that need PM decision today (not team-level — org-level)
-- April 1st timeline confidence signal
+- Any competitor or customer context that surfaced recently
+- Strategic items that need PM decision today (org-level, not team-level)
+- Launch timeline confidence signal
 
 Format as a tight Slack mrkdwn section starting with *📊 Stakeholders*. Max 6 lines.`,
       { systemPrompt: SYSTEM_PROMPT, maxTokens: 600 }
@@ -121,7 +123,6 @@ Separate the two with: ---BROADCAST---`,
       { systemPrompt: SYSTEM_PROMPT, maxTokens: 2048 }
     );
 
-    // Split into section + broadcast
     const parts = output.split('---BROADCAST---');
     const slackSection = parts[0].trim();
     const broadcast = parts[1]?.trim() || output;

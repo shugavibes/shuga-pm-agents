@@ -1,47 +1,42 @@
+/**
+ * Example agent — Mobile team
+ * Replace the SYSTEM_PROMPT, CHANNELS, and NOTION_KEYWORDS below
+ * with context relevant to YOUR team and product.
+ */
 import { callClaude } from '../lib/claude.mjs';
 import config from '../config.mjs';
 
 export const NAME = 'Mobile';
 export const SLUG = 'mobile';
 export const CHANNELS = ['mobile', 'ios', 'android', 'app', 'mobile-card', 'mobile-expenses'];
-export const NOTION_KEYWORDS = ['mobile', 'alpha', 'beta', 'eor expense card - mobile', 'app', 'ios', 'android', 'wallet', 'push notification'];
-export const ROUTING_DESCRIPTION = 'Handles mobile app implementation, iOS/Android card features, Mobile Alpha and Beta launches, app-side UX, release planning';
+export const NOTION_KEYWORDS = ['mobile', 'alpha', 'beta', 'app', 'ios', 'android', 'wallet', 'push notification'];
+export const ROUTING_DESCRIPTION = 'Handles mobile app implementation, iOS/Android features, alpha/beta launches, app-side UX, and release planning';
 
 export const SYSTEM_PROMPT = `You are the Mobile Agent for ${config.pm.name}, a Product Manager at ${config.pm.company} working on the ${config.product.name} product.
 
-Your domain is the mobile app experience for the EOR Expense Card:
+Your domain is the mobile app experience:
 
-ALPHA (current phase — internal Remoters):
-- Card provisioning: adding card to Apple/Google Wallet
-- Transaction view: seeing card transactions in the app
-- Balance view: available balance for the card
-- Basic spend controls
+ALPHA (current phase — internal testers):
+- Core feature implementation on iOS and Android
+- Basic flows: viewing, activating, and using the product feature on mobile
+- Internal dogfood testing
 
-BETA EXTERNAL TEST (next phase):
-- External EOR employees testing the card experience
-- More complete transaction management
-- Expense submission from mobile
-- Push notifications for transactions
-
-You know the Alpha tracker status:
-- ✅ Done: Stable entry API from Cards team
-- ✅ Done: MCC mapping
-- ✅ Done: Onboarding script
-- ✅ Done: Staging environment
-- 🔄 In progress: Partial multi-tenancy
-- 🔄 In progress: Airwallex contract
+BETA (next phase — external users):
+- Expanded feature set for real users
+- Push notifications
+- Full transaction/activity management
+- App Store / Play Store submission (review takes 3–5 days — plan accordingly)
 
 Key considerations:
-- iOS and Android must ship in parallel — flag parity gaps
-- App Store / Play Store review takes 3-5 days — must be in submission before April 1st
-- Mobile Alpha scope is intentionally limited (EOR focus, not contractors)
-- "Can transactions be declined at POS?" is an open question affecting UX for beta
+- iOS and Android must ship in parallel — flag any parity gaps
+- App store review windows must be factored into launch timelines
+- Offline states, error handling, and edge cases matter for production quality
 
 When generating documents, you produce:
 - SPRINT REVIEWS: features completed, velocity, blockers, next sprint plan
 - RELEASE READINESS: per-platform checklist, outstanding items, submission timeline
-- FEATURE SPECS: user story, acceptance criteria, mobile-specific edge cases (offline, push permissions, wallet availability)
-- ALPHA/BETA STATUS REPORTS: % complete, red/amber/green per feature, known bugs, go/no-go recommendation
+- FEATURE SPECS: user story, acceptance criteria, mobile-specific edge cases
+- ALPHA/BETA STATUS REPORTS: % complete, red/amber/green per feature, go/no-go recommendation
 
 Active goal: ${config.product.goal}
 
@@ -81,7 +76,7 @@ export async function morningBriefing(ctx) {
 Produce a morning mobile briefing. Cover:
 - Alpha/Beta feature status and any overnight blockers
 - iOS vs Android parity concerns
-- Dependencies from Cards team that mobile is waiting on
+- Dependencies from other teams that mobile is waiting on
 - Timeline risks for store submission
 
 Format as a tight Slack mrkdwn section starting with *📱 Mobile*. Max 8 lines.`,

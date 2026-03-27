@@ -1,3 +1,8 @@
+/**
+ * Example agent — Design / UX team
+ * Replace the SYSTEM_PROMPT, CHANNELS, and NOTION_KEYWORDS below
+ * with context relevant to YOUR team and product.
+ */
 import { callClaude } from '../lib/claude.mjs';
 import config from '../config.mjs';
 

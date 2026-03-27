@@ -1,50 +1,42 @@
+/**
+ * Example agent — Expenses / Billing / Finance team
+ * Replace the SYSTEM_PROMPT, CHANNELS, and NOTION_KEYWORDS below
+ * with context relevant to YOUR team and product.
+ */
 import { callClaude } from '../lib/claude.mjs';
 import config from '../config.mjs';
 
 export const NAME = 'Expenses';
 export const SLUG = 'expenses';
-export const CHANNELS = ['expense', 'expenses', 'billing', 'payroll', 'pay', 'disbursement', 'finance'];
-export const NOTION_KEYWORDS = ['expense', 'billing', 'payroll', 'pay item', 'notional', 'direct billing', 'disbursement', 'net pay', 'payslip', 'gross-up'];
-export const ROUTING_DESCRIPTION = 'Handles expense flows, direct billing integration, notional pay item mappings, payroll processing, gross-up, and cross-domain billing questions';
+export const CHANNELS = ['expense', 'expenses', 'billing', 'payroll', 'finance', 'disbursement'];
+export const NOTION_KEYWORDS = ['expense', 'billing', 'payroll', 'invoice', 'finance', 'reimbursement'];
+export const ROUTING_DESCRIPTION = 'Handles expense flows, billing integration, invoicing, payroll processing, and cross-domain finance questions';
 
 export const SYSTEM_PROMPT = `You are the Expenses Agent for ${config.pm.name}, a Product Manager at ${config.pm.company} working on the ${config.product.name} product.
 
-Your domain spans three tightly coupled areas:
+Your domain spans expense management and billing:
 
-1. EXPENSE FLOWS — how card transactions become expense records:
-   - Employee submits/views card expenses in the Expenses product
-   - Admin reviews, categorizes, and approves card expenses
-   - MCC codes determine expense category and taxability
+1. EXPENSE FLOWS — how transactions become expense records:
+   - Employees submit and view expenses in the product
+   - Admins review, categorize, and approve expenses
+   - Category codes determine expense type and taxability
 
-2. BILLING INTEGRATION — how card spend becomes a customer invoice:
-   - Non-taxable transactions → billed DIRECTLY from Expenses domain (on approval, no payroll run needed)
-   - Taxable transactions → mapped to a NOTIONAL PAY ITEM in payroll → gross-up calculated → billable = transaction amount + tax → charged to customer
-   - No actual payment to the employee (notional = tax calculated but not disbursed)
-   - Direct billing model: customers agree at sign-up to be billed per transaction (no approval/decline step)
-   - Corrections/reversals → negative billables or Credit Memos
-   - Billing Platform + Billing Experience teams implement (~1 week estimate, pending Payroll alignment)
+2. BILLING INTEGRATION — how spend becomes a customer invoice:
+   - Non-taxable transactions → billed directly without payroll dependency
+   - Taxable transactions → routed through payroll for tax calculation
+   - Invoice line items, corrections, and reversals
 
-3. PAYROLL INTEGRATION — the Expenses ↔ Payroll ↔ Cards cross-domain:
-   - Notional Pay Items: payroll processes the taxable amount for gross-up without disbursing
-   - Launch limited to countries with automated taxability + gross-up
-   - Payroll team must align before billing can be confirmed
-   - Key meeting happened 2026-03-18: Payroll × Billing × Expenses × Cards
-
-Open questions you track:
-- How do line items appear on the invoice for card spend?
-- Do we need a new column on the Detailed Invoice?
-- What description on the Itemized Report?
-- Which countries lack gross-up and what's the fallback?
-
-Key people: @Jean Jaymalin, @Christian Lundgren, @Nico
+3. CROSS-TEAM DEPENDENCIES — the Expenses ↔ Payroll ↔ Engineering relationship:
+   - Payroll team alignment required before billing flows can be confirmed
+   - Engineering integration for automatic expense creation from transactions
 
 When generating documents, you produce:
-- PROCESS FLOW NARRATIVES: step-by-step billing flows with decision points (taxable vs non-taxable, corrections)
-- PAY ITEM MAPPING TABLES: country → taxability → pay item type → billing treatment
-- BILLING INTEGRATION SPECS: API contracts between Expenses domain and Billing Platform
-- CROSS-TEAM ALIGNMENT DOCS: what Payroll needs from Cards, what Billing needs from Expenses
+- PROCESS FLOW NARRATIVES: step-by-step billing flows with decision points
+- BILLING INTEGRATION SPECS: API contracts between expense and billing systems
+- CROSS-TEAM ALIGNMENT DOCS: what payroll needs from engineering, what billing needs from expenses
+- PAY ITEM MAPPING TABLES: transaction type → taxability → billing treatment
 
-Active goal: ${config.product.goal} The Payroll alignment is the critical path.
+Active goal: ${config.product.goal}
 
 Format all Slack messages in mrkdwn. Format documents in clean markdown with tables where useful.`;
 
@@ -61,13 +53,13 @@ function buildContext(ctx) {
     : '';
   const peersSection = peers ? `## What peer agents reported last run\n${peers}\n\n` : '';
 
-  return `${memorySection}${peersSection}## Slack — expenses/billing/payroll channels (last ${ctx.hoursBack}h)
+  return `${memorySection}${peersSection}## Slack — expenses/billing channels (last ${ctx.hoursBack}h)
 ${ctx.mentions.length > 0 ? ctx.mentions.map(m => `[#${m.channel}] ${m.user}: "${m.text}"`).join('\n') : '(none)'}
 
 ## Your recent messages in these channels
 ${ctx.threads.length > 0 ? ctx.threads.map(m => `[#${m.channel}] You: "${m.text}"`).join('\n') : '(none)'}
 
-## Relevant Notion pages (expenses/billing/payroll, last 14 days)
+## Relevant Notion pages (expenses/billing, last 14 days)
 ${ctx.notionPages.length > 0 ? ctx.notionPages.map(p => `- "${p.title}": ${p.content || '(no preview)'}`).join('\n') : '(none)'}
 
 Today: ${ctx.date}`;
@@ -79,10 +71,10 @@ export async function morningBriefing(ctx) {
     const output = await callClaude(
       `${buildContext(ctx)}
 
-Produce a morning expenses/billing/payroll briefing. Cover:
-- Payroll alignment blockers (critical path for April 1st)
-- Open billing questions that need answers
-- Any payroll or billing team asks waiting on product input
+Produce a morning expenses/billing briefing. Cover:
+- Billing or payroll alignment blockers on the critical path
+- Open billing questions that need answers today
+- Any finance or billing team asks waiting on product input
 - Cross-team dependency risks
 
 Format as a tight Slack mrkdwn section starting with *🧾 Expenses & Billing*. Max 8 lines.`,
@@ -100,9 +92,9 @@ export async function eodSummary(ctx) {
     const output = await callClaude(
       `${buildContext(ctx)}
 
-Produce an EOD expenses/billing/payroll summary. Cover:
+Produce an EOD expenses/billing summary. Cover:
 - Decisions or alignments reached today
-- Payroll/billing integration progress
+- Billing integration progress
 - What's still blocking the billing flow from going live
 - Action items and owners for tomorrow
 
@@ -124,7 +116,7 @@ export async function runTask(instruction, ctx) {
 ## Task
 ${instruction}
 
-Execute the task using the expenses/billing/payroll context above. If it's a document (process flow, pay item mapping, billing spec), write it in full. Include tables for billing treatment by transaction type or country where relevant. Be precise about the taxable vs non-taxable split.`,
+Execute the task using the expenses/billing context above. If it's a document (process flow, billing spec, alignment doc), write it in full. Include tables for billing treatment by transaction type where relevant.`,
       { systemPrompt: SYSTEM_PROMPT, maxTokens: 4096 }
     );
     return { agentName: NAME, success: true, output, duration: Date.now() - start };

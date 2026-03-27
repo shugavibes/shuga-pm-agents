@@ -8,12 +8,12 @@
 
 export default {
   pm: {
-    name: 'Nico',
-    company: 'Remote.com',
+    name: 'Your Name',       // e.g. 'Alex'
+    company: 'Your Company', // e.g. 'Acme Corp'
   },
   product: {
-    name: 'EOR Expense Card',
+    name: 'Your Product',    // e.g. 'Payments Platform'
     // Your current active goal. Used in all morning/EOD briefings.
-    goal: 'Launch Card integration MVP by April 1st — all teams aligned and unblocked.',
+    goal: 'Your active goal and deadline.', // e.g. 'Launch v2 by June 1st — all teams aligned.'
   },
 };

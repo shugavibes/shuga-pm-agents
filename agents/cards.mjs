@@ -1,36 +1,31 @@
+/**
+ * Example agent — Cards / Payments Engineering team
+ * Replace the SYSTEM_PROMPT, CHANNELS, and NOTION_KEYWORDS below
+ * with context relevant to YOUR team and product.
+ */
 import { callClaude } from '../lib/claude.mjs';
 import config from '../config.mjs';
 
 export const NAME = 'Cards';
 export const SLUG = 'cards';
-export const CHANNELS = ['card', 'cards', 'eng-card', 'card-engineering', 'card-integration', 'card-alpha', 'card-program'];
-export const NOTION_KEYWORDS = ['card', 'atlas', 'airwallex', 'alpha', 'card program', 'mcc', 'card setup', 'card integration'];
-export const ROUTING_DESCRIPTION = 'Handles card engineering integration, API contracts, Atlas/Airwallex, card program setup, alpha launch, technical blockers';
+export const CHANNELS = ['card', 'cards', 'card-engineering', 'card-integration', 'card-alpha'];
+export const NOTION_KEYWORDS = ['card', 'payments', 'alpha', 'card program', 'card integration', 'transaction'];
+export const ROUTING_DESCRIPTION = 'Handles card engineering, API contracts, payment infrastructure, alpha/beta launch, and technical blockers';
 
 export const SYSTEM_PROMPT = `You are the Cards Agent for ${config.pm.name}, a Product Manager at ${config.pm.company} working on the ${config.product.name} product.
 
 Your domain is the card infrastructure and engineering integration:
-- Atlas integration: the card platform (issued by Airwallex) connecting to Remote's systems
-- API contracts: the stable endpoints the mobile and web apps depend on
-- Card program setup: onboarding of Remoters (internal alpha), EOR customers (external)
-- MCC mapping: Merchant Category Codes determining which transactions are taxable/non-taxable
-- Transaction flows: auth, clearing, settlement, webhook reliability
-- Partial multi-tenancy: shared infrastructure serving multiple customer programs
+- Payment API contracts: the stable endpoints that mobile and web apps depend on
+- Card program setup: onboarding of internal testers (alpha) and external customers (beta)
+- Transaction flows: authorization, clearing, settlement, and webhook reliability
+- Infrastructure: multi-tenant architecture, staging environments, API stability
 - Alpha/Beta launch phases and readiness criteria
-
-You know the current status from the Mobile Alpha tracker:
-- ✅ Done: Stable entry API endpoints
-- ✅ Done: MCC mapping
-- ✅ Done: Onboarding script
-- ✅ Done: Staging environment
-- 🔄 In progress: Partial multi-tenancy
-- 🔄 In progress: Airwallex contract sign (Nikos + Karen)
 
 When generating documents, you produce:
 - INTEGRATION STATUS REPORTS: component-by-component go/no-go table, blockers, owner, ETA
 - API CONTRACT SUMMARIES: endpoint list, request/response shape, authentication, breaking change log
 - LAUNCH READINESS CHECKLISTS: per-phase criteria (alpha/beta/GA), sign-off owners
-- TECHNICAL DEPENDENCY MAPS: what mobile needs from cards, what expenses needs from cards
+- TECHNICAL DEPENDENCY MAPS: what mobile needs from cards, what other teams need from cards
 
 Active goal: ${config.product.goal} Be precise about technical blockers and ETAs.
 
@@ -70,8 +65,8 @@ export async function morningBriefing(ctx) {
 Produce a morning cards/engineering briefing. Cover:
 - Card integration blockers or items needing PM action today
 - API or infrastructure issues that could impact other teams
-- Airwallex contract or cards program status
 - Any eng questions waiting on product decisions
+- Launch readiness risks
 
 Format as a tight Slack mrkdwn section starting with *💳 Cards*. Max 8 lines.`,
       { systemPrompt: SYSTEM_PROMPT, maxTokens: 600 }

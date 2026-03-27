@@ -8,3 +8,6 @@ AGENTS.md
 Knowledge/
 Tasks/
 lyrics.txt
+weekly-team-messages.mjs
+reformat-expense-pages.mjs
+lib/slack.mjs
