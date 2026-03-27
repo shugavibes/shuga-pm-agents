@@ -28,7 +28,7 @@ An AI assistant for Product Managers that runs on autopilot. Every morning it re
 **1. Download the setup command**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/pm-agents/main/.claude/commands/setup-pm-agents.md \
+curl -fsSL https://raw.githubusercontent.com/shugavibes/shuga-pm-agents/main/.claude/commands/setup-pm-agents.md \
   -o ~/.claude/commands/setup-pm-agents.md
 ```
 
@@ -60,7 +60,7 @@ The Slack token is read directly from Cursor's local storage — Cursor handles 
 ## Manual setup (alternative to /setup-pm-agents)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/pm-agents
+git clone https://github.com/shugavibes/shuga-pm-agents
 cd pm-agents
 npm install
 cp .env.example .env
