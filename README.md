@@ -15,7 +15,16 @@ An AI assistant for Product Managers that runs on autopilot. Every morning it re
 ## What you need
 
 - [Claude Code](https://claude.ai/code) installed
-- An [Anthropic API key](https://console.anthropic.com)
+- An API key from **any of these providers** (pick one):
+  | Provider | Get a key |
+  |---|---|
+  | Anthropic (Claude) | [console.anthropic.com](https://console.anthropic.com) |
+  | OpenAI (GPT-4o, o3) | [platform.openai.com](https://platform.openai.com) |
+  | Google (Gemini) | [aistudio.google.com](https://aistudio.google.com) |
+  | Moonshot (Kimi) | [platform.moonshot.cn](https://platform.moonshot.cn) |
+  | DeepSeek | [platform.deepseek.com](https://platform.deepseek.com) |
+  | Groq (Llama) | [console.groq.com](https://console.groq.com) |
+  | Mistral | [console.mistral.ai](https://console.mistral.ai) |
 - [Cursor IDE](https://cursor.sh) with the Slack MCP connected (one-time OAuth setup)
 - [Notion desktop app](https://www.notion.so/desktop) installed locally
 
@@ -46,8 +55,8 @@ Claude will ask you about your teams, channels, and schedule — answer the ques
 
 ```
 Slack (mentions + threads)
-Notion (local SQLite)        →  Team Agents  →  Claude  →  Your Slack DMs
-                                (Design, Eng,
+Notion (local SQLite)        →  Team Agents  →  AI Model  →  Your Slack DMs
+                                (Design, Eng,    (your choice)
                                  Mobile, etc.)
 ```
 
@@ -64,11 +73,18 @@ git clone https://github.com/shugavibes/shuga-pm-agents
 cd pm-agents
 npm install
 cp .env.example .env
-# Edit .env — add your ANTHROPIC_API_KEY and NOTION_DB_PATH
+# Edit .env — add the API key for your chosen provider
 # Connect Slack MCP in Cursor (Settings → MCP → Add Slack)
 ```
 
-Edit `config.mjs` with your name, company, and current goal. Then replace the files in `agents/` with agents for your actual teams (use the existing ones as templates).
+Edit `config.mjs` with your name, company, current goal, and AI provider:
+
+```js
+ai: {
+  provider: 'openai',   // 'anthropic' | 'openai' | 'gemini' | 'kimi' | 'deepseek' | 'groq' | 'mistral'
+  model: 'gpt-4o',      // leave blank to use each provider's default
+}
+``` Then replace the files in `agents/` with agents for your actual teams (use the existing ones as templates).
 
 Test it:
 ```bash
