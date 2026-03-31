@@ -27,9 +27,12 @@ Ask the user these questions one group at a time. Wait for their answers before 
 7. Which AI provider do you want to use? (default: anthropic)
    Options: `anthropic` (Claude) · `openai` (GPT-4o) · `gemini` (Google) · `kimi` (Moonshot) · `deepseek` · `groq` (Llama) · `mistral`
    Ask them to have the API key ready — they'll add it to `.env` after setup.
-8. Where do you want to create the project folder? (full path, e.g. `/Users/yourname/pm-agents`)
-9. What time should the morning briefing run? (default: 8:00 AM weekdays)
-10. What time should the EOD briefing run? (default: 6:00 PM weekdays)
+8. Which IDE are you using? (Cursor / VS Code / Windsurf / Claude Code / Other)
+   - If **Cursor**: the Slack token is read automatically — no extra steps.
+   - If **anything else**: tell them to connect the Slack MCP in their IDE, then copy the token and paste it as `SLACK_MCP_TOKEN` in `.env`.
+9. Where do you want to create the project folder? (full path, e.g. `/Users/yourname/pm-agents`)
+10. What time should the morning briefing run? (default: 8:00 AM weekdays)
+11. What time should the EOD briefing run? (default: 6:00 PM weekdays)
 
 Once you have all answers, proceed to Step 2.
 

@@ -12,10 +12,13 @@ An AI assistant for Product Managers that runs on autopilot. Every morning it re
 - **Memory** — agents accumulate context over time and get smarter each day
 - **On-demand tasks** — ask it to write a spec, brief, risk register, or any PM doc using the full context it has
 
+---
+
 ## What you need
 
-- [Claude Code](https://claude.ai/code) installed
-- An API key from **any of these providers** (pick one):
+- [Claude Code](https://claude.ai/code) installed (any version)
+- An API key from **any of these AI providers** (pick one):
+
   | Provider | Get a key |
   |---|---|
   | Anthropic (Claude) | [console.anthropic.com](https://console.anthropic.com) |
@@ -25,10 +28,29 @@ An AI assistant for Product Managers that runs on autopilot. Every morning it re
   | DeepSeek | [platform.deepseek.com](https://platform.deepseek.com) |
   | Groq (Llama) | [console.groq.com](https://console.groq.com) |
   | Mistral | [console.mistral.ai](https://console.mistral.ai) |
-- [Cursor IDE](https://cursor.sh) with the Slack MCP connected (one-time OAuth setup)
+
+- **Slack MCP** connected in your IDE (see below)
 - [Notion desktop app](https://www.notion.so/desktop) installed locally
 
-> **Note:** Slack auth uses the official Slack MCP OAuth flow via Cursor — proper OAuth tokens, not browser session cookies. Notion is read from the local SQLite database on your machine (no API key needed).
+---
+
+## Slack setup — pick your IDE
+
+Slack auth uses the official MCP OAuth flow. Works with any IDE that supports MCP:
+
+| IDE | How to connect | Token handling |
+|---|---|---|
+| **Cursor** | Settings → MCP → Add → Slack | Auto-refreshed — no manual steps ever |
+| **VS Code** (Cline / Copilot) | Add Slack MCP server in extension settings | Copy token to `SLACK_MCP_TOKEN` in `.env` |
+| **Windsurf** | Cascade settings → MCP → Add Slack | Copy token to `SLACK_MCP_TOKEN` in `.env` |
+| **Claude Code** | `claude mcp add slack` | Copy token to `SLACK_MCP_TOKEN` in `.env` |
+| **Other / none** | Use the [Slack MCP server](https://github.com/modelcontextprotocol/servers) directly | Copy token to `SLACK_MCP_TOKEN` in `.env` |
+
+> **Cursor users:** the token is read automatically from Cursor's local storage and refreshes silently. Nothing to copy or update.
+>
+> **Everyone else:** after connecting Slack MCP in your IDE, find the token in your IDE's MCP config and paste it as `SLACK_MCP_TOKEN` in your `.env` file.
+
+> **Notion:** read from the local SQLite database on your machine — no API key needed.
 
 ---
 
@@ -47,7 +69,7 @@ curl -fsSL https://raw.githubusercontent.com/shugavibes/shuga-pm-agents/main/.cl
 /setup-pm-agents
 ```
 
-Claude will ask you about your teams, channels, and schedule — answer the questions and it generates everything automatically. Setup takes about 10 minutes.
+Claude will ask you about your teams, channels, schedule, and preferred AI provider — answer the questions and it generates everything automatically. Setup takes about 10 minutes.
 
 ---
 
@@ -56,13 +78,10 @@ Claude will ask you about your teams, channels, and schedule — answer the ques
 ```
 Slack (mentions + threads)
 Notion (local SQLite)        →  Team Agents  →  AI Model  →  Your Slack DMs
-                                (Design, Eng,    (your choice)
-                                 Mobile, etc.)
+                                (one per team)   (your choice)
 ```
 
 Each agent knows the Slack channels and Notion keywords relevant to its team. They run in parallel, each producing a section of the briefing. A Stakeholders agent synthesizes everything into a cross-team view.
-
-The Slack token is read directly from Cursor's local storage — Cursor handles the OAuth refresh automatically, so you never need to update a token manually.
 
 ---
 
@@ -70,11 +89,10 @@ The Slack token is read directly from Cursor's local storage — Cursor handles 
 
 ```bash
 git clone https://github.com/shugavibes/shuga-pm-agents
-cd pm-agents
+cd shuga-pm-agents
 npm install
 cp .env.example .env
-# Edit .env — add the API key for your chosen provider
-# Connect Slack MCP in Cursor (Settings → MCP → Add Slack)
+# Edit .env — add your AI provider key + SLACK_MCP_TOKEN if not using Cursor
 ```
 
 Edit `config.mjs` with your name, company, current goal, and AI provider:
@@ -84,7 +102,9 @@ ai: {
   provider: 'openai',   // 'anthropic' | 'openai' | 'gemini' | 'kimi' | 'deepseek' | 'groq' | 'mistral'
   model: 'gpt-4o',      // leave blank to use each provider's default
 }
-``` Then replace the files in `agents/` with agents for your actual teams (use the existing ones as templates).
+```
+
+Replace the files in `agents/` with agents for your actual teams (use the existing ones as templates).
 
 Test it:
 ```bash
@@ -102,7 +122,7 @@ Schedule it (macOS):
 
 ## Customization
 
-**`config.mjs`** — your name, company, product, and active goal. Everything reads from here.
+**`config.mjs`** — your name, company, product, AI provider, and active goal. Everything reads from here.
 
 **`agents/`** — one file per team. Each has:
 - `CHANNELS` — Slack channel names to filter mentions
@@ -123,8 +143,8 @@ npm run task "create a risk register for the Q2 launch"
 ## Requirements
 
 - Node.js 18+
-- macOS (Slack token auto-refresh via Cursor uses macOS Keychain; on Windows/Linux, set `SLACK_MCP_TOKEN` in `.env` manually)
-- Cursor IDE (for Slack MCP OAuth)
+- macOS, Windows, or Linux
+- Any IDE with MCP support (Cursor, VS Code + Cline, Windsurf, Claude Code, etc.)
 - Notion desktop app
 
 ---
